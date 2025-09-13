@@ -70,7 +70,7 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
         }
 
         const imageId = uuidv4();
-        const baseUrl = process.env.RAILWAY_STATIC_URL || `http://localhost:${PORT}`;
+        const baseUrl = process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : `http://localhost:${PORT}`;
         const imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
         
         // Сохраняем метаданные

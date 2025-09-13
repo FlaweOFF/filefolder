@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест API загрузки изображений</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .input-group {
+            margin: 20px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="url"], input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .image-preview {
+            max-width: 300px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Тест API загрузки изображений</h1>
+        
+        <div class="input-group">
+            <label for="apiUrl">URL API сервера:</label>
+            <input type="url" id="apiUrl" placeholder="https://your-project-name-production.up.railway.app" 
+                   value="http://localhost:3000">
+        </div>
+
+        <div class="test-section">
+            <h3>📤 Тест загрузки изображения</h3>
+            <div class="input-group">
+                <label for="imageFile">Выберите изображение:</label>
+                <input type="file" id="imageFile" accept="image/*">
+            </div>
+            <button onclick="testUpload()" id="uploadBtn">Загрузить изображение</button>
+            <div id="uploadResult" class="result" style="display: none;"></div>
+            <img id="uploadedImage" class="image-preview" style="display: none;">
+        </div>
+
+        <div class="test-section">
+            <h3>📋 Тест получения списка изображений</h3>
+            <button onclick="testGetAllImages()" id="getAllBtn">Получить список изображений</button>
+            <div id="getAllResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 Тест получения информации об изображении</h3>
+            <div class="input-group">
+                <label for="imageId">ID изображения:</label>
+                <input type="text" id="imageId" placeholder="Введите ID изображения">
+            </div>
+            <button onclick="testGetImageInfo()" id="getInfoBtn">Получить информацию</button>
+            <div id="getInfoResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🗑️ Тест удаления изображения</h3>
+            <div class="input-group">
+                <label for="deleteImageId">ID изображения для удаления:</label>
+                <input type="text" id="deleteImageId" placeholder="Введите ID изображения">
+            </div>
+            <button onclick="testDeleteImage()" id="deleteBtn">Удалить изображение</button>
+            <div id="deleteResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🚀 Полный тест API</h3>
+            <button onclick="runFullTest()" id="fullTestBtn">Запустить полный тест</button>
+            <div id="fullTestResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        let uploadedImageId = null;
+
+        function getApiUrl() {
+            return document.getElementById('apiUrl').value.replace(/\/$/, '');
+        }
+
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `result ${type}`;
+            element.style.display = 'block';
+        }
+
+        async function testUpload() {
+            const fileInput = document.getElementById('imageFile');
+            const uploadBtn = document.getElementById('uploadBtn');
+            
+            if (!fileInput.files[0]) {
+                showResult('uploadResult', 'Пожалуйста, выберите файл изображения', 'error');
+                return;
+            }
+
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Загружается...';
+
+            try {
+                const formData = new FormData();
+                formData.append('image', fileInput.files[0]);
+
+                const response = await fetch(`${getApiUrl()}/api/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    uploadedImageId = data.data.imageId;
+                    document.getElementById('imageId').value = uploadedImageId;
+                    document.getElementById('deleteImageId').value = uploadedImageId;
+                    
+                    showResult('uploadResult', 
+                        `✅ Успешно загружено!\n` +
+                        `ID: ${data.data.imageId}\n` +
+                        `URL: ${data.data.url}\n` +
+                        `Размер: ${data.data.size} байт`, 'success');
+                    
+                    // Показываем превью изображения
+                    const img = document.getElementById('uploadedImage');
+                    img.src = data.data.url;
+                    img.style.display = 'block';
+                } else {
+                    showResult('uploadResult', `❌ Ошибка: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showResult('uploadResult', `❌ Ошибка сети: ${error.message}`, 'error');
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Загрузить изображение';
+            }
+        }
+
+        async function testGetAllImages() {
+            const getAllBtn = document.getElementById('getAllBtn');
+            getAllBtn.disabled = true;
+            getAllBtn.textContent = 'Загружается...';
+
+            try {
+                const response = await fetch(`${getApiUrl()}/api/images`);
+                const data = await response.json();
+
+                if (data.success) {
+                    showResult('getAllResult', 
+                        `✅ Найдено изображений: ${data.count}\n` +
+                        JSON.stringify(data.data, null, 2), 'success');
+                } else {
+                    showResult('getAllResult', `❌ Ошибка: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showResult('getAllResult', `❌ Ошибка сети: ${error.message}`, 'error');
+            } finally {
+                getAllBtn.disabled = false;
+                getAllBtn.textContent = 'Получить список изображений';
+            }
+        }
+
+        async function testGetImageInfo() {
+            const imageId = document.getElementById('imageId').value;
+            const getInfoBtn = document.getElementById('getInfoBtn');
+            
+            if (!imageId) {
+                showResult('getInfoResult', 'Пожалуйста, введите ID изображения', 'error');
+                return;
+            }
+
+            getInfoBtn.disabled = true;
+            getInfoBtn.textContent = 'Загружается...';
+
+            try {
+                const response = await fetch(`${getApiUrl()}/api/image/${imageId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    showResult('getInfoResult', 
+                        `✅ Информация об изображении:\n` +
+                        JSON.stringify(data.data, null, 2), 'success');
+                } else {
+                    showResult('getInfoResult', `❌ Ошибка: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showResult('getInfoResult', `❌ Ошибка сети: ${error.message}`, 'error');
+            } finally {
+                getInfoBtn.disabled = false;
+                getInfoBtn.textContent = 'Получить информацию';
+            }
+        }
+
+        async function testDeleteImage() {
+            const imageId = document.getElementById('deleteImageId').value;
+            const deleteBtn = document.getElementById('deleteBtn');
+            
+            if (!imageId) {
+                showResult('deleteResult', 'Пожалуйста, введите ID изображения', 'error');
+                return;
+            }
+
+            if (!confirm(`Вы уверены, что хотите удалить изображение с ID: ${imageId}?`)) {
+                return;
+            }
+
+            deleteBtn.disabled = true;
+            deleteBtn.textContent = 'Удаляется...';
+
+            try {
+                const response = await fetch(`${getApiUrl()}/api/image/${imageId}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showResult('deleteResult', `✅ Изображение успешно удалено!`, 'success');
+                    // Очищаем поля
+                    document.getElementById('imageId').value = '';
+                    document.getElementById('deleteImageId').value = '';
+                    document.getElementById('uploadedImage').style.display = 'none';
+                    uploadedImageId = null;
+                } else {
+                    showResult('deleteResult', `❌ Ошибка: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showResult('deleteResult', `❌ Ошибка сети: ${error.message}`, 'error');
+            } finally {
+                deleteBtn.disabled = false;
+                deleteBtn.textContent = 'Удалить изображение';
+            }
+        }
+
+        async function runFullTest() {
+            const fullTestBtn = document.getElementById('fullTestBtn');
+            fullTestBtn.disabled = true;
+            fullTestBtn.textContent = 'Тестируется...';
+
+            let results = [];
+            const apiUrl = getApiUrl();
+
+            try {
+                // Тест 1: Базовый endpoint
+                try {
+                    const response = await fetch(`${apiUrl}/`);
+                    const data = await response.json();
+                    results.push(`✅ Базовый endpoint: ${data.message ? 'РАБОТАЕТ' : 'НЕ РАБОТАЕТ'}`);
+                } catch (error) {
+                    results.push(`❌ Базовый endpoint: ОШИБКА - ${error.message}`);
+                }
+
+                // Тест 2: Список изображений
+                try {
+                    const response = await fetch(`${apiUrl}/api/images`);
+                    const data = await response.json();
+                    results.push(`✅ Список изображений: ${data.success ? 'РАБОТАЕТ' : 'НЕ РАБОТАЕТ'}`);
+                } catch (error) {
+                    results.push(`❌ Список изображений: ОШИБКА - ${error.message}`);
+                }
+
+                // Тест 3: Загрузка (если есть файл)
+                const fileInput = document.getElementById('imageFile');
+                if (fileInput.files[0]) {
+                    try {
+                        const formData = new FormData();
+                        formData.append('image', fileInput.files[0]);
+                        const response = await fetch(`${apiUrl}/api/upload`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await response.json();
+                        results.push(`✅ Загрузка изображения: ${data.success ? 'РАБОТАЕТ' : 'НЕ РАБОТАЕТ'}`);
+                        
+                        if (data.success) {
+                            uploadedImageId = data.data.imageId;
+                            document.getElementById('imageId').value = uploadedImageId;
+                            document.getElementById('deleteImageId').value = uploadedImageId;
+                        }
+                    } catch (error) {
+                        results.push(`❌ Загрузка изображения: ОШИБКА - ${error.message}`);
+                    }
+                } else {
+                    results.push(`⚠️ Загрузка изображения: ПРОПУЩЕН (нет файла)`);
+                }
+
+                showResult('fullTestResult', 
+                    `🚀 РЕЗУЛЬТАТЫ ПОЛНОГО ТЕСТА:\n\n` +
+                    results.join('\n') + '\n\n' +
+                    `📍 Тестируемый URL: ${apiUrl}`, 'info');
+
+            } catch (error) {
+                showResult('fullTestResult', `❌ Ошибка при выполнении тестов: ${error.message}`, 'error');
+            } finally {
+                fullTestBtn.disabled = false;
+                fullTestBtn.textContent = 'Запустить полный тест';
+            }
+        }
+
+        // Автоматически заполняем URL Railway при загрузке страницы
+        window.onload = function() {
+            const urlInput = document.getElementById('apiUrl');
+            if (urlInput.value === 'http://localhost:3000') {
+                urlInput.placeholder = 'https://your-project-name-production.up.railway.app';
+            }
+        };
+    </script>
+</body>
+</html>
