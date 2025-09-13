@@ -4,7 +4,7 @@ const FormData = require('form-data');
 const fetch = require('node-fetch');
 
 // Конфигурация
-const API_BASE_URL = process.env.API_URL || 'http://localhost:3000';
+const API_BASE_URL = process.env.API_URL || 'https://filefolder-production.up.railway.app';
 const TEST_IMAGE_PATH = './test-image.jpg';
 
 // Создаем тестовое изображение (1x1 пиксель в формате JPEG)
